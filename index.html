@@ -7,22 +7,22 @@
   <title>NHL Standings Generator</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/css/theme.default.min.css" />
 <style id="css">
-body {
-  font-family: sans-serif;
-}
+  body {
+    font-family: sans-serif;
+  }
 
-table th {
-  text-align: left;
-}
+  table th {
+    text-align: left;
+  }
 
-label {
-display: inline-block;
-min-width: 10em;
-}
-.label-text {
-display: inline-block;
-min-width: 4.5em;
-}
+  label {
+  display: inline-block;
+  min-width: 10em;
+  }
+  .label-text {
+  display: inline-block;
+  min-width: 4.5em;
+  }
 </style>
 </head>
 <body>
@@ -50,10 +50,12 @@ min-width: 4.5em;
     <label><span class="label-text">OT loss:</span> <input id="lossOT" name="lossOT" size="2"  value="1"/></label> 
     <label><span class="label-text">SO loss:</span> <input id="lossSO" name="lossSO" size="2" value="1" /></label> 
   </p>
+  <p><label>Group By: <select id="group"><option>League</option><option>Conference</option><option>Division</option></select></label></p> 
   <p><button id="calculate">Generate Standings</button></p>
   </form>
   <table id="statistics" class="table table-condensed table-striped"></table>
-
+  <p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
+  
 <script id="javascript">
 $(document).ready( function() {
   calculate();
@@ -67,32 +69,55 @@ function calculate( ) {
   $('#statistics').empty();
   var dataSrc = $('#dataSrc').val();
   var query = buildQuery();
-  //Old code, columns no longer accurate: "select A, B, C, D, E, G, H, I, J, 2 * B + I + J, (3 * C) + (2 * D) label 3*C+2*D 'CustomPoints', 2 * B + I + J 'NHL Points'";
-  //console.log(query);
-	sheetrock({
-	  url: $('#dataSrc').val(),
-	  target: $('#statistics'),
-	  query: query,
-	  callback: function (error, options, response) {
-		$('#statistics').tablesorter({ 
-			// enable debug mode 
-			sortInitialOrder: 'desc'
-		});
-		$("#statistics").trigger("updateAll"); 
+  var division = 'division';
+  var conference = 'conference';
+    sheetrock({
+      url: $('#dataSrc').val(),
+      target: $('#statistics'),
+      query: query,
+      callback: function (error, options, response) {
+        $('#statistics').tablesorter({ 
+            sortInitialOrder: 'desc'
+        });
+        $("#statistics").trigger("updateAll"); 
 
-		console.log(error, options, response);
-	  },
-	   reset: true
-	});
+        console.log(error, options, response);
+      },
+      rowTemplate: function ( row ) { 
+        var output = "";
+        switch ( $('#group').val() ) {
+          case 'Conference': 
+            if ( conference != row.cells.conference) {
+                conference = row.cells.conference;
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr><th colspan=17>" + conference + "</th></tr></tbody>";
+            }                       
+          break;
+          case 'Division':
+            if ( division != row.cells.division) {
+                division = row.cells.division;
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr><th colspan=17>" + division + "</th></tr></tbody>";
+            }           
+          break;
+          default:
+        }
+        var cells = row.cells;
+        delete cells.division;
+        delete cells.conference;
+        output += "<tr><td>" + Object.values(cells).join("</td><td>") + "</td></tr>";
+        return output;
+      },
+       reset: true
+    });
   
 }
 
 function buildQuery() {
 
-  var cols = { name: "A", GP: "B", wins: "C", winsRG: "D", winsOT: "E", winsSO: "F", losses: "H", lossesRG: "I", lossesOT: "J", lossesSO: "K", goalsRG: 'M', goalsOT: 'N', goalsNHL: 'O' };
+  //There must be an easier way to do this...
+  var cols = { name: "A", GP: "D", wins: "E", winsRG: "F", winsOT: "G", winsSO: "H", losses: "J", lossesRG: "K", lossesOT: "L", lossesSO: "M", goalsRG: 'O', goalsOT: 'P', goalsNHL: 'Q', conference: "B", division: "C" };
   
-  var select = [cols.name, cols.GP, cols.wins, cols.winsRG, cols.winsOT, cols.winsSO, cols.losses, cols.lossesRG, cols.lossesOT, cols.lossesSO, cols.goalsNHL, cols.goalsRG, cols.goalsOT];
-  //              ['(3 * C) + (2 * D)', 'CustomPoints'] ];
+  var select = [cols.name, cols.GP, cols.wins, cols.winsRG, cols.winsOT, cols.winsSO, cols.losses, cols.lossesRG, cols.lossesOT, cols.lossesSO, cols.goalsNHL, cols.goalsRG, cols.goalsOT, cols.conference, cols.division];
+
   var labels = [];
   
   var nhlPointsQry = '2 * ' + cols.wins + " + " + cols.lossesOT  + " + " + cols.lossesSO;
@@ -108,11 +133,9 @@ function buildQuery() {
   customPointsQry.push( $('#lossSO').val() + '*' + cols.lossesSO);
   select.push( customPointsQry.join('+'));
   labels.push( [customPointsQry.join('+'), "'Custom Points'"]);
-  return "select " + select.join(',') + ' order by A label ' + labels.map(e => e.join(' ')).join(',');
+  return "select " + select.join(',') + ' order by B, C, A label ' + labels.map(e => e.join(' ')).join(',');
 
 }
 </script>
-
-<p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
 </body>
 </html>
