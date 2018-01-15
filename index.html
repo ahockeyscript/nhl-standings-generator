@@ -33,7 +33,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/js/jquery.tablesorter.widgets.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jquery-deserialize@2.0.0-rc1/src/jquery.deserialize.min.js"></script>
 
-  <h1>NHL Win/Loss</h1>
+  <h1>NHL Standings Generator</h1>
   <p>So, you hate the way the NHL points system currently works and think you can do better. Now's your chance!</p>
   <form id="diy" method="get">
   <p><label>Data Source: 
@@ -58,7 +58,13 @@
   </form>
   <table id="statistics" class="tablesorter"></table>
   <p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
-  
+  <h2>How This Works</h2>
+  <p><ol>
+    <li>I download a JSON file of the NHL schedule, which includes data on goals scored, final period, etc</li>
+    <li>I parse this data (using JQ) into a CSV, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
+    <li>I upload (manually, for now) this data into a Google Sheet</li>
+    <li>The Google Sheet is used as the data source for this page</li>
+  </ol>
 <script id="javascript">
 var datasource = { "201718": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=558853557",
 "201617": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=2093677728"
