@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width">
   <title>NHL Standings Generator</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/css/theme.default.min.css" />
+
 <style id="css">
   body {
     font-family: sans-serif;
@@ -29,14 +30,16 @@
 <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-sheetrock/1.1.4/dist/sheetrock.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/js/jquery.tablesorter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/js/jquery.tablesorter.widgets.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery-deserialize@2.0.0-rc1/src/jquery.deserialize.min.js"></script>
 
   <h1>NHL Win/Loss</h1>
   <p>So, you hate the way the NHL points system currently works and think you can do better. Now's your chance!</p>
-  <form>
+  <form id="diy" method="get">
   <p><label>Data Source: 
     <select id="dataSrc" name="dataSrc">
-      <option value="https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=558853557">2017-18 (Updated 2018-01-13)</option>
-      <option value="https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=2093677728">2016-17</option>
+      <option value="201718">2017-18 (Updated 2018-01-18)</option>
+      <option value="201617">2016-17</option>
     </select></label></p>
   
   <h3>DIY Points</h3>
@@ -50,17 +53,31 @@
     <label><span class="label-text">OT loss:</span> <input id="lossOT" name="lossOT" size="2"  value="1"/></label> 
     <label><span class="label-text">SO loss:</span> <input id="lossSO" name="lossSO" size="2" value="1" /></label> 
   </p>
-  <p><label>Group By: <select id="group"><option>League</option><option>Conference</option><option>Division</option></select></label></p> 
-  <p><button id="calculate">Generate Standings</button></p>
+  <p><label>Group By: <select id="group" name="group"><option>League</option><option>Conference</option><option>Division</option></select></label></p> 
+  <p><button id="calculate">Generate Standings</button> <input type="reset" value="Reset Form" /></p>
   </form>
-  <table id="statistics" class="table table-condensed table-striped"></table>
+  <table id="statistics" class="tablesorter"></table>
   <p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
   
 <script id="javascript">
+var datasource = { "201718": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=558853557",
+"201617": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=2093677728"
+};
+
 $(document).ready( function() {
+  $('#dataSrc').change( function() { this.form.submit(); } );
+  if ( location.search.substr( 1 ) ) { 
+  $('form#diy').deserialize( location.search.substr( 1 ) );
+  }
   calculate();
-  $('#dataSrc').change( calculate );
-  $('#calculate').click( function( e ) { e.preventDefault(); calculate(); } );
+  $('form#diy').on( "submit", function( e ) {
+    e.preventDefault();
+    calculate();
+    history.pushState($( this ).serialize(), "", '?' + $( this ).serialize());
+  });
+  $('form#diy').on('reset', function(e){
+    history.pushState('', '', '?');
+});
 
 });
 
@@ -72,16 +89,17 @@ function calculate( ) {
   var division = 'division';
   var conference = 'conference';
     sheetrock({
-      url: $('#dataSrc').val(),
+      url: datasource[ $('#dataSrc').val() ],
       target: $('#statistics'),
       query: query,
       callback: function (error, options, response) {
         $('#statistics').tablesorter({ 
-            sortInitialOrder: 'desc'
+            sortInitialOrder: 'desc',
+            widgets : ['zebra','columns']
         });
         $("#statistics").trigger("updateAll"); 
 
-        console.log(error, options, response);
+        //console.log(error, options, response);
       },
       rowTemplate: function ( row ) { 
         var output = "";
@@ -95,7 +113,7 @@ function calculate( ) {
           case 'Division':
             if ( division != row.cells.division) {
                 division = row.cells.division;
-                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr><th colspan=17>" + division + "</th></tr></tbody>";
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr><th colspan=17>" + division + "</th></tr></tbody><tbody>";
             }           
           break;
           default:
@@ -113,6 +131,17 @@ function calculate( ) {
 
 function buildQuery() {
 
+  //Doing some very basic data sanitization
+  var fieldNames = [ 'winRG', 'winOT', 'winSO', 'lossRG', 'lossOT', 'lossSO' ];
+  var fieldValues = new Object();
+  fieldNames.forEach( function( field ) { 
+    fieldValues[field] = Number( $('#' + field).val() );  
+    if ( isNaN( fieldValues[field] ) ) { 
+      fieldValues[field] = 0;
+      $('#' + field).val( 0 )
+    }
+  } );
+
   //There must be an easier way to do this...
   var cols = { name: "A", GP: "D", wins: "E", winsRG: "F", winsOT: "G", winsSO: "H", losses: "J", lossesRG: "K", lossesOT: "L", lossesSO: "M", goalsRG: 'O', goalsOT: 'P', goalsNHL: 'Q', conference: "B", division: "C" };
   
@@ -125,12 +154,12 @@ function buildQuery() {
   labels.push([nhlPointsQry, "'NHL Points'"]);
   
   var customPointsQry = [];
-  customPointsQry.push( $('#winRG').val() + '*' + cols.winsRG);
-  customPointsQry.push( $('#winOT').val() + '*' + cols.winsOT);
-  customPointsQry.push( $('#winSO').val() + '*' + cols.winsSO);
-  customPointsQry.push( $('#lossRG').val() + '*' + cols.lossesRG);
-  customPointsQry.push( $('#lossOT').val() + '*' + cols.lossesOT);
-  customPointsQry.push( $('#lossSO').val() + '*' + cols.lossesSO);
+  customPointsQry.push( fieldValues.winRG + '*' + cols.winsRG);
+  customPointsQry.push( fieldValues.winOT + '*' + cols.winsOT);
+  customPointsQry.push( fieldValues.winSO + '*' + cols.winsSO);
+  customPointsQry.push( fieldValues.lossRG + '*' + cols.lossesRG);
+  customPointsQry.push( fieldValues.lossOT + '*' + cols.lossesOT);
+  customPointsQry.push( fieldValues.lossSO + '*' + cols.lossesSO);
   select.push( customPointsQry.join('+'));
   labels.push( [customPointsQry.join('+'), "'Custom Points'"]);
   return "select " + select.join(',') + ' order by B, C, A label ' + labels.map(e => e.join(' ')).join(',');
