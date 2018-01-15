@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<meta name="robots" content="noindex">
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>NHL Standings Generator</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/css/theme.default.min.css" />
+<style id="css">
+body {
+  font-family: sans-serif;
+}
+
+table th {
+  text-align: left;
+}
+
+label {
+display: inline-block;
+min-width: 10em;
+}
+.label-text {
+display: inline-block;
+min-width: 4.5em;
+}
+</style>
+</head>
+<body>
+<script src="https://code.jquery.com/jquery-3.1.0.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-sheetrock/1.1.4/dist/sheetrock.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/js/jquery.tablesorter.min.js"></script>
+
+  <h1>NHL Win/Loss</h1>
+  <p>So, you hate the way the NHL points system currently works and think you can do better. Now's your chance!</p>
+  <form>
+  <p><label>Data Source: 
+    <select id="dataSrc" name="dataSrc">
+      <option value="https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=558853557">2017-18 (Updated 2018-01-13)</option>
+      <option value="https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=2093677728">2016-17</option>
+    </select></label></p>
+  
+  <h3>DIY Points</h3>
+  <p>
+    <label><span class="label-text">Reg win:</span> <input id="winRG" name="winRG" size="2" value="3" /></label> 
+    <label><span class="label-text">OT win:</span> <input id="winOT" name="winOT" size="2" value="2" /></label>
+    <label><span class="label-text">SO win:</span> <input id="winSO" name="winSO" size="2" value="2" /></label>
+  </p>
+    <p>
+    <label><span class="label-text">Reg loss:</span> <input id="lossRG" name="lossRG" size="2" value="0" /></label> 
+    <label><span class="label-text">OT loss:</span> <input id="lossOT" name="lossOT" size="2"  value="1"/></label> 
+    <label><span class="label-text">SO loss:</span> <input id="lossSO" name="lossSO" size="2" value="1" /></label> 
+  </p>
+  <p><button id="calculate">Generate Standings</button></p>
+  </form>
+  <table id="statistics" class="table table-condensed table-striped"></table>
+
+<script id="javascript">
+$(document).ready( function() {
+  calculate();
+  $('#dataSrc').change( calculate );
+  $('#calculate').click( function( e ) { e.preventDefault(); calculate(); } );
+
+});
+
+function calculate( ) {
+
+  $('#statistics').empty();
+  var dataSrc = $('#dataSrc').val();
+  var query = buildQuery();
+  //Old code, columns no longer accurate: "select A, B, C, D, E, G, H, I, J, 2 * B + I + J, (3 * C) + (2 * D) label 3*C+2*D 'CustomPoints', 2 * B + I + J 'NHL Points'";
+  //console.log(query);
+	sheetrock({
+	  url: $('#dataSrc').val(),
+	  target: $('#statistics'),
+	  query: query,
+	  callback: function (error, options, response) {
+		$('#statistics').tablesorter({ 
+			// enable debug mode 
+			sortInitialOrder: 'desc'
+		});
+		$("#statistics").trigger("updateAll"); 
+
+		console.log(error, options, response);
+	  },
+	   reset: true
+	});
+  
+}
+
+function buildQuery() {
+
+  var cols = { name: "A", GP: "B", wins: "C", winsRG: "D", winsOT: "E", winsSO: "F", losses: "H", lossesRG: "I", lossesOT: "J", lossesSO: "K", goalsRG: 'M', goalsOT: 'N', goalsNHL: 'O' };
+  
+  var select = [cols.name, cols.GP, cols.wins, cols.winsRG, cols.winsOT, cols.winsSO, cols.losses, cols.lossesRG, cols.lossesOT, cols.lossesSO, cols.goalsNHL, cols.goalsRG, cols.goalsOT];
+  //              ['(3 * C) + (2 * D)', 'CustomPoints'] ];
+  var labels = [];
+  
+  var nhlPointsQry = '2 * ' + cols.wins + " + " + cols.lossesOT  + " + " + cols.lossesSO;
+  select.push(nhlPointsQry);
+  labels.push([nhlPointsQry, "'NHL Points'"]);
+  
+  var customPointsQry = [];
+  customPointsQry.push( $('#winRG').val() + '*' + cols.winsRG);
+  customPointsQry.push( $('#winOT').val() + '*' + cols.winsOT);
+  customPointsQry.push( $('#winSO').val() + '*' + cols.winsSO);
+  customPointsQry.push( $('#lossRG').val() + '*' + cols.lossesRG);
+  customPointsQry.push( $('#lossOT').val() + '*' + cols.lossesOT);
+  customPointsQry.push( $('#lossSO').val() + '*' + cols.lossesSO);
+  select.push( customPointsQry.join('+'));
+  labels.push( [customPointsQry.join('+'), "'Custom Points'"]);
+  return "select " + select.join(',') + ' order by A label ' + labels.map(e => e.join(' ')).join(',');
+
+}
+</script>
+
+<p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
+</body>
+</html>
