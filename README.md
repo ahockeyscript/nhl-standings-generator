@@ -1,2 +1,2 @@
-# nhl-record
-Detailed NHL win/loss records
+# nhl-standings-generator
+Make your own NHL standings!
