@@ -56,6 +56,11 @@
   <p><label>Group By: <select id="group" name="group"><option>League</option><option>Conference</option><option>Division</option></select></label></p> 
   <p><button id="calculate">Generate Standings</button> <input type="reset" value="Reset Form" /></p>
   </form>
+  
+    
+  <h3>DIY Playoffs</h3>
+  <p><button id="playoffs">Playoffs</button></p>
+  
   <table id="statistics" class="tablesorter"></table>
   <p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
   <h2>How This Works</h2>
@@ -65,6 +70,9 @@
     <li>I upload (manually, for now) this data into a Google Sheet</li>
     <li>The Google Sheet is used as the data source for this page</li>
   </ol>
+
+
+  
 <script id="javascript">
 var datasource = { "201718": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=558853557",
 "201617": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=2093677728"
@@ -82,20 +90,21 @@ $(document).ready( function() {
     history.pushState($( this ).serialize(), "", '?' + $( this ).serialize());
   });
   $('form#diy').on('reset', function(e){
-    history.pushState('', '', '?');
-});
+      history.pushState('', '', '?');
+  });
+  $('#playoffs').click( function(e) { playoffs(); });
 
 });
 
 function calculate( ) {
 
   $('#statistics').empty();
-  var dataSrc = $('#dataSrc').val();
+  var dataSrc = datasource[ $('#dataSrc').val() ];
   var query = buildQuery();
   var division = 'division';
   var conference = 'conference';
     sheetrock({
-      url: datasource[ $('#dataSrc').val() ],
+      url: dataSrc,
       target: $('#statistics'),
       query: query,
       callback: function (error, options, response) {
@@ -113,13 +122,13 @@ function calculate( ) {
           case 'Conference': 
             if ( conference != row.cells.conference) {
                 conference = row.cells.conference;
-                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr><th colspan=17>" + conference + "</th></tr></tbody>";
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody><tbody>";
             }                       
           break;
           case 'Division':
             if ( division != row.cells.division) {
                 division = row.cells.division;
-                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr><th colspan=17>" + division + "</th></tr></tbody><tbody>";
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + division + "</th></tr></tbody><tbody>";
             }           
           break;
           default:
@@ -134,6 +143,77 @@ function calculate( ) {
     });
   
 }
+
+function playoffs() {
+
+  $('#statistics').empty();
+  var dataSrc = datasource[ $('#dataSrc').val() ];
+  var query = buildQuery();
+  var teams = new Object();
+  sheetrock({
+    url: dataSrc,
+    query: query,
+    callback: function (error, options, response) {
+      var playoffs = new Object();
+      console.log(response);
+      $.each( teams, function( conference, divisions) { 
+        playoffs[conference] = new Object();
+        playoffs[conference]["Wild Card"] = [];
+        $.each( divisions, function( division, teams ) {
+          teams = teams.sort( sortByPoints );
+          playoffs[conference][division] = teams.slice(0,3); //Top 3 of each division
+          playoffs[conference]["Wild Card"] = playoffs[conference]["Wild Card"].concat( teams.slice(3) ); //Store everyone else in here temporarily
+        } );
+        playoffs[conference]["Wild Card"] = playoffs[conference]["Wild Card"].sort( sortByPoints );
+        playoffs[conference]["Other"] = playoffs[conference]["Wild Card"].slice(2);
+        playoffs[conference]["Wild Card"] = playoffs[conference]["Wild Card"].slice(0, 2);
+      } );
+      console.log(response.rows);
+      response.html = "<thead><tr><th>" + response.rows[0].cellsArray.join("</th><th>") + "</th></tr></thead>";
+      
+      $.each( playoffs, function( conference, positions ) {
+        response.html += "<tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody>";
+        $.each( positions, function( label, values ) {
+            response.html += "<tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + label + "</th></tr></tbody>";
+            response.html += "<tbody>";
+            $.each( values, function( index, value ) {
+                response.html += "<tr><td>" + Object.values(value).join("</td><td>") + "</td></tr>";
+            } );
+            response.html += "</tbody>";
+        } );
+      });
+      
+
+
+      $('#statistics').html(response.html);
+    },
+    rowTemplate: function( row ) {
+      console.log(row);
+      if (row.num == 0) { return '' };
+      if ( !teams[row.cells.conference] ) {
+        teams[row.cells.conference] = new Object();
+      }
+      if ( !teams[row.cells.conference][row.cells.division] ) {
+        teams[row.cells.conference][row.cells.division] = [];
+      }
+      teams[row.cells.conference][row.cells.division].push( row.cells );
+      return '';
+    },
+    reset: true
+  });
+  
+}
+
+function sortByPoints( a, b ) {
+  if ( a.CustomPoints > b.CustomPoints ) {
+    return -1;
+  }
+  if ( a.CustomPoints < b.CustomPoints ) {
+    return 1;
+  }
+  return 0;
+}
+          
 
 function buildQuery() {
 
@@ -157,7 +237,7 @@ function buildQuery() {
   
   var nhlPointsQry = '2 * ' + cols.wins + " + " + cols.lossesOT  + " + " + cols.lossesSO;
   select.push(nhlPointsQry);
-  labels.push([nhlPointsQry, "'NHL Points'"]);
+  labels.push([nhlPointsQry, "'NHLPoints'"]);
   
   var customPointsQry = [];
   customPointsQry.push( fieldValues.winRG + '*' + cols.winsRG);
@@ -167,7 +247,7 @@ function buildQuery() {
   customPointsQry.push( fieldValues.lossOT + '*' + cols.lossesOT);
   customPointsQry.push( fieldValues.lossSO + '*' + cols.lossesSO);
   select.push( customPointsQry.join('+'));
-  labels.push( [customPointsQry.join('+'), "'Custom Points'"]);
+  labels.push( [customPointsQry.join('+'), "'CustomPoints'"]);
   return "select " + select.join(',') + ' order by B, C, A label ' + labels.map(e => e.join(' ')).join(',');
 
 }
