@@ -53,29 +53,22 @@
     <label><span class="label-text">OT loss:</span> <input id="lossOT" name="lossOT" size="2"  value="1"/></label> 
     <label><span class="label-text">SO loss:</span> <input id="lossSO" name="lossSO" size="2" value="1" /></label> 
   </p>
-  <p><label>Group By: <select id="group" name="group"><option>League</option><option>Conference</option><option>Division</option></select></label></p> 
+  <p><label>Group By: <select id="group" name="group"><option>League</option><option>Conference</option><option>Division</option><option>Wild Card</option></select></label></p> 
   <p><button id="calculate">Generate Standings</button> <input type="reset" value="Reset Form" /></p>
   </form>
   
-    
-  <h3>DIY Playoffs</h3>
-  <p><button id="playoffs">Playoffs</button></p>
-  
-  <table id="statistics" class="tablesorter"></table>
+  <table id="statistics" class="tablesorter tablesorter-default"></table>
   <p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
   <h2>How This Works</h2>
   <p><ol>
     <li>I download a JSON file of the NHL schedule, which includes data on goals scored, final period, etc</li>
-    <li>I parse this data (using JQ) into a CSV, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
-    <li>I upload (manually, for now) this data into a Google Sheet</li>
-    <li>The Google Sheet is used as the data source for this page</li>
+    <li>I parse this data (using JQ) into a new JSON file, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
+    <li>I upload (manually, for now) this data to GitHub, and it's used to populate this page</li>
   </ol>
-
-
   
 <script id="javascript">
-var datasource = { "201718": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=558853557",
-"201617": "https://docs.google.com/spreadsheets/d/1PKdVFZnLeHraH7xJfEFnejckTtSN782vmEnDS2OYD-E/edit?usp=sharing#gid=2093677728"
+var datasource = { "201718": "./data/results_2017-10-01_2018-07-01.json",
+"201617": "./data/results_2016-10-01_2017-07-01.json"
 };
 
 $(document).ready( function() {
@@ -83,140 +76,148 @@ $(document).ready( function() {
   if ( location.search.substr( 1 ) ) { 
   $('form#diy').deserialize( location.search.substr( 1 ) );
   }
-  calculate();
   $('form#diy').on( "submit", function( e ) {
     e.preventDefault();
-    calculate();
+    if ( $('#group').val() == "Wild Card") { 
+      playoffs();
+    }
+    else {
+      calculate();
+    }
     history.pushState($( this ).serialize(), "", '?' + $( this ).serialize());
-  });
+  }).submit();
   $('form#diy').on('reset', function(e){
       history.pushState('', '', '?');
   });
-  $('#playoffs').click( function(e) { playoffs(); });
-
 });
 
-function calculate( ) {
+var displayFields = [ 'name', 'GP', 'wins', 'winsRG', 'winsOT', 'winsSO', 'losses', 'lossesRG', 'lossesOT', 'lossesSO', 'goalsRG', 'goalsOT', 'goalsNHL', /*'goalsAgainstRG', 'goalsAgainstOT', 'goalsAgainstNHL',*/ 'NHLPoints', 'CustomPoints'];
 
+function calculate( ) {
   $('#statistics').empty();
   var dataSrc = datasource[ $('#dataSrc').val() ];
-  var query = buildQuery();
   var division = 'division';
   var conference = 'conference';
-    sheetrock({
-      url: dataSrc,
-      target: $('#statistics'),
-      query: query,
-      callback: function (error, options, response) {
-        $('#statistics').tablesorter({ 
-            sortInitialOrder: 'desc',
-            widgets : ['zebra','columns']
-        });
-        $("#statistics").trigger("updateAll"); 
+  $.get( { url: dataSrc, dataType: 'json', success: function(data) { 
+    var output = "";
+    output += "<thead><tr><th>" + displayFields.join("</th><th>") + "</th></tr></thead>";
 
-        //console.log(error, options, response);
-      },
-      rowTemplate: function ( row ) { 
-        var output = "";
+    $.each( data.results, function( index, team) {
         switch ( $('#group').val() ) {
           case 'Conference': 
-            if ( conference != row.cells.conference) {
-                conference = row.cells.conference;
-                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody><tbody>";
+            if ( conference != team.conference) {
+                conference = team.conference;
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=\"" + displayFields.length + "\">" + conference + "</th></tr></tbody><tbody>";
             }                       
           break;
           case 'Division':
-            if ( division != row.cells.division) {
-                division = row.cells.division;
-                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + division + "</th></tr></tbody><tbody>";
+            if ( division != team.division) {
+                division = team.division;
+                output += "</tbody><tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=\"" + displayFields.length + "\">" + division + "</th></tr></tbody><tbody>";
             }           
           break;
           default:
         }
-        var cells = row.cells;
-        delete cells.division;
-        delete cells.conference;
-        output += "<tr><td>" + Object.values(cells).join("</td><td>") + "</td></tr>";
-        return output;
-      },
-       reset: true
-    });
-  
+        team['NHLPoints'] = calculateNHLPoints(team);
+        team['CustomPoints'] = calculateCustomPoints(team);
+        
+        var cells = displayFields.map( function(key) { return team[key]; });
+        output += "<tr><td>" + cells.join("</td><td>") + "</td></tr>";
+    } );
+    $('#statistics').html(output);
+    $('#statistics').tablesorter({ 
+            sortInitialOrder: 'desc',
+            widgets : ['zebra','columns']
+        });
+    $("#statistics").trigger("updateAll"); 
+  } } );
 }
 
 function playoffs() {
 
   $('#statistics').empty();
   var dataSrc = datasource[ $('#dataSrc').val() ];
-  var query = buildQuery();
   var teams = new Object();
-  sheetrock({
-    url: dataSrc,
-    query: query,
-    callback: function (error, options, response) {
-      var playoffs = new Object();
-      console.log(response);
-      $.each( teams, function( conference, divisions) { 
-        playoffs[conference] = new Object();
-        playoffs[conference]["Wild Card"] = [];
-        $.each( divisions, function( division, teams ) {
-          teams = teams.sort( sortByPoints );
-          playoffs[conference][division] = teams.slice(0,3); //Top 3 of each division
-          playoffs[conference]["Wild Card"] = playoffs[conference]["Wild Card"].concat( teams.slice(3) ); //Store everyone else in here temporarily
-        } );
-        playoffs[conference]["Wild Card"] = playoffs[conference]["Wild Card"].sort( sortByPoints );
-        playoffs[conference]["Other"] = playoffs[conference]["Wild Card"].slice(2);
-        playoffs[conference]["Wild Card"] = playoffs[conference]["Wild Card"].slice(0, 2);
+  $.get( { url: dataSrc, dataType: 'json', success: function(data) { 
+    var output = "";
+    
+    //Reformatting by Conference and Division
+    $.each( data.results, function( index, team) { 
+      if ( !teams[team.conference] ) {
+        teams[team.conference] = new Object();
+      }
+      if ( !teams[team.conference][team.division] ) {
+        teams[team.conference][team.division] = [];
+      }
+      team['winsROW'] = team['winsRG'] + team['winsOT'];
+      team['goalDiff'] = team['goals'] - team['goalsAgainst'];
+      team['NHLPoints'] = calculateNHLPoints(team);
+      team['CustomPoints'] = calculateCustomPoints(team);
+      teams[team.conference][team.division].push( team );
+    });
+    
+    var playoffs = new Object();
+    $.each( teams, function( conference, divisions) { 
+      playoffs[conference] = new Object();
+      var wildcard = [];
+      $.each( divisions, function( division, teams ) {
+        teams = teams.sort( sortByNHLPoints );
+        playoffs[conference][division] = teams.slice(0,3); //Top 3 of each division
+        wildcard = wildcard.concat( teams.slice(3) ); //Store everyone else in here temporarily
       } );
-      console.log(response.rows);
-      response.html = "<thead><tr><th>" + response.rows[0].cellsArray.join("</th><th>") + "</th></tr></thead>";
-      
-      $.each( playoffs, function( conference, positions ) {
-        response.html += "<tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody>";
-        $.each( positions, function( label, values ) {
-            response.html += "<tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + label + "</th></tr></tbody>";
-            response.html += "<tbody>";
-            $.each( values, function( index, value ) {
-                response.html += "<tr><td>" + Object.values(value).join("</td><td>") + "</td></tr>";
-            } );
-            response.html += "</tbody>";
-        } );
-      });
-      
+      wildcard = wildcard.sort( sortByNHLPoints );
+      playoffs[conference]["Wild Card"] = wildcard.slice(0, 2);
+      playoffs[conference]["Other"] = wildcard.slice(2);
+    } );
+    output = "<thead><tr><th>" + displayFields.join("</th><th>") + "</th></tr></thead>";
+    
+    $.each( playoffs, function( conference, positions ) {
+      output += "<tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody>";
+      $.each( positions, function( label, values ) {
+          output += "<tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + label + "</th></tr></tbody>";
+          output += "<tbody>";
+          var even = true;
+          $.each( values, function( index, value ) {
+              var cells = displayFields.map( function(key) { return value[key]; });
 
-
-      $('#statistics').html(response.html);
-    },
-    rowTemplate: function( row ) {
-      console.log(row);
-      if (row.num == 0) { return '' };
-      if ( !teams[row.cells.conference] ) {
-        teams[row.cells.conference] = new Object();
-      }
-      if ( !teams[row.cells.conference][row.cells.division] ) {
-        teams[row.cells.conference][row.cells.division] = [];
-      }
-      teams[row.cells.conference][row.cells.division].push( row.cells );
-      return '';
-    },
-    reset: true
-  });
+              output += "<tr class=\"" + ( ( even ) ? "odd" : "even" ) +"\"><td>" + cells.join("</td><td>") + "</td></tr>";
+              even = !even;
+          } );
+          output += "</tbody>";
+      } );
+    });
+    
+    $('#statistics').html(output); 
+    
+  } } );  
   
 }
 
-function sortByPoints( a, b ) {
-  if ( a.CustomPoints > b.CustomPoints ) {
-    return -1;
-  }
-  if ( a.CustomPoints < b.CustomPoints ) {
-    return 1;
+function sortByCustomPoints( a, b ) {
+  var tieBreakers = ['CustomPoints', 'GP', 'winsROW', 'goalDiff'];
+  return sortByPoints( a, b, tieBreakers);
+}
+
+function sortByNHLPoints( a, b ) {
+  var tieBreakers = ['NHLPoints', 'GP', 'winsROW', 'goalDiff'];
+  return sortByPoints( a, b, tieBreakers);
+}
+
+function sortByPoints( a, b, tieBreakers ) {
+  for ( var i = 0; i < tieBreakers.length; i++ ) {
+    var compare = b[tieBreakers[i]] - a[tieBreakers[i]];
+    if ( ( compare ) != 0 ) {
+      return compare;
+    }
   }
   return 0;
 }
-          
 
-function buildQuery() {
+function calculateNHLPoints( teamRecord ) {
+  return 2 * teamRecord.wins + teamRecord.lossesOT + teamRecord.lossesSO;
+}
 
+function calculateCustomPoints( teamRecord ) {
   //Doing some very basic data sanitization
   var fieldNames = [ 'winRG', 'winOT', 'winSO', 'lossRG', 'lossOT', 'lossSO' ];
   var fieldValues = new Object();
@@ -227,30 +228,17 @@ function buildQuery() {
       $('#' + field).val( 0 )
     }
   } );
-
-  //There must be an easier way to do this...
-  var cols = { name: "A", GP: "D", wins: "E", winsRG: "F", winsOT: "G", winsSO: "H", losses: "J", lossesRG: "K", lossesOT: "L", lossesSO: "M", goalsRG: 'O', goalsOT: 'P', goalsNHL: 'Q', conference: "B", division: "C" };
   
-  var select = [cols.name, cols.GP, cols.wins, cols.winsRG, cols.winsOT, cols.winsSO, cols.losses, cols.lossesRG, cols.lossesOT, cols.lossesSO, cols.goalsNHL, cols.goalsRG, cols.goalsOT, cols.conference, cols.division];
-
-  var labels = [];
+  var customPoints = 0;
+  customPoints += fieldValues.winRG * teamRecord.winsRG;
+  customPoints += fieldValues.winOT * teamRecord.winsOT;
+  customPoints += fieldValues.winSO * teamRecord.winsSO;
+  customPoints += fieldValues.lossRG * teamRecord.lossesRG;
+  customPoints += fieldValues.lossOT * teamRecord.lossesOT;
+  customPoints += fieldValues.lossSO * teamRecord.lossesSO;
   
-  var nhlPointsQry = '2 * ' + cols.wins + " + " + cols.lossesOT  + " + " + cols.lossesSO;
-  select.push(nhlPointsQry);
-  labels.push([nhlPointsQry, "'NHLPoints'"]);
-  
-  var customPointsQry = [];
-  customPointsQry.push( fieldValues.winRG + '*' + cols.winsRG);
-  customPointsQry.push( fieldValues.winOT + '*' + cols.winsOT);
-  customPointsQry.push( fieldValues.winSO + '*' + cols.winsSO);
-  customPointsQry.push( fieldValues.lossRG + '*' + cols.lossesRG);
-  customPointsQry.push( fieldValues.lossOT + '*' + cols.lossesOT);
-  customPointsQry.push( fieldValues.lossSO + '*' + cols.lossesSO);
-  select.push( customPointsQry.join('+'));
-  labels.push( [customPointsQry.join('+'), "'CustomPoints'"]);
-  return "select " + select.join(',') + ' order by B, C, A label ' + labels.map(e => e.join(' ')).join(',');
-
-}
+  return customPoints;
+}      
 </script>
 </body>
 </html>
