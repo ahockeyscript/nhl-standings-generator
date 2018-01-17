@@ -38,9 +38,9 @@
   <form id="diy" method="get">
   <p><label>Data Source: 
     <select id="dataSrc" name="dataSrc">
-      <option value="201718">2017-18 (Updated 2018-01-18)</option>
+      <option value="201718">2017-18</option>
       <option value="201617">2016-17</option>
-    </select></label></p>
+    </select></label><br /><small>Last updated: <span id="dataLastUpdated"></span></small></p>
   
   <h3>DIY Points</h3>
   <p>
@@ -67,17 +67,20 @@
   </ol>
   
 <script id="javascript">
-var datasource = { "201718": "./data/results_2017-10-01_2018-07-01.json",
+var dataSources = { "201718": "./data/results_2017-10-01_2018-07-01.json",
 "201617": "./data/results_2016-10-01_2017-07-01.json"
 };
 
+var dataSrc;
+
 $(document).ready( function() {
-  $('#dataSrc').change( function() { this.form.submit(); } );
+  updateDataSource();
   if ( location.search.substr( 1 ) ) { 
   $('form#diy').deserialize( location.search.substr( 1 ) );
   }
   $('form#diy').on( "submit", function( e ) {
     e.preventDefault();
+    updateDataSource();
     if ( $('#group').val() == "Wild Card") { 
       playoffs();
     }
@@ -89,13 +92,21 @@ $(document).ready( function() {
   $('form#diy').on('reset', function(e){
       history.pushState('', '', '?');
   });
+  
+  
+
 });
+
+function updateDataSource( ) {
+  dataSrc = dataSources[ $('#dataSrc').val() ];
+  $.get( { url: dataSrc, dataType: 'json', success: function(data) { $('#dataLastUpdated').html( data.lastModified) } } );
+}
 
 var displayFields = [ 'name', 'GP', 'wins', 'winsRG', 'winsOT', 'winsSO', 'losses', 'lossesRG', 'lossesOT', 'lossesSO', 'goalsRG', 'goalsOT', 'goalsNHL', /*'goalsAgainstRG', 'goalsAgainstOT', 'goalsAgainstNHL',*/ 'NHLPoints', 'CustomPoints'];
 
 function calculate( ) {
+  console.log(dataSrc);
   $('#statistics').empty();
-  var dataSrc = datasource[ $('#dataSrc').val() ];
   var division = 'division';
   var conference = 'conference';
   $.get( { url: dataSrc, dataType: 'json', success: function(data) { 
@@ -134,9 +145,9 @@ function calculate( ) {
 }
 
 function playoffs() {
+  console.log(dataSrc);
 
   $('#statistics').empty();
-  var dataSrc = datasource[ $('#dataSrc').val() ];
   var teams = new Object();
   $.get( { url: dataSrc, dataType: 'json', success: function(data) { 
     var output = "";
