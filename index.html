@@ -53,7 +53,7 @@
     <label><span class="label-text">OT loss:</span> <input id="lossOT" name="lossOT" size="2"  value="1"/></label> 
     <label><span class="label-text">SO loss:</span> <input id="lossSO" name="lossSO" size="2" value="1" /></label> 
   </p>
-  <p><label>Group By: <select id="group" name="group"><option>League</option><option>Conference</option><option>Division</option><option>Wild Card</option></select></label></p> 
+  <p><label>Group By: <select id="group" name="group"><option>League</option><option>Conference</option><option>Division</option><option>Wild Card</option></select></label><br /> <small>Wild Card is sorted by your custom points system.</small></p> 
   <p><button id="calculate">Generate Standings</button> <input type="reset" value="Reset Form" /></p>
   </form>
   
@@ -138,7 +138,8 @@ function calculate( ) {
     $('#statistics').html(output);
     $('#statistics').tablesorter({ 
             sortInitialOrder: 'desc',
-            widgets : ['zebra','columns']
+            widgets : ['zebra','columns'],
+            sortList: [[0,0]]
         });
     $("#statistics").trigger("updateAll"); 
   } } );
