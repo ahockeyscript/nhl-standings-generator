@@ -173,11 +173,11 @@ function playoffs() {
       playoffs[conference] = new Object();
       var wildcard = [];
       $.each( divisions, function( division, teams ) {
-        teams = teams.sort( sortByNHLPoints );
+        teams = teams.sort( sortByCustomPoints );
         playoffs[conference][division] = teams.slice(0,3); //Top 3 of each division
         wildcard = wildcard.concat( teams.slice(3) ); //Store everyone else in here temporarily
       } );
-      wildcard = wildcard.sort( sortByNHLPoints );
+      wildcard = wildcard.sort( sortByCustomPoints );
       playoffs[conference]["Wild Card"] = wildcard.slice(0, 2);
       playoffs[conference]["Other"] = wildcard.slice(2);
     } );
