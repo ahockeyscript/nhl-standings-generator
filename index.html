@@ -28,6 +28,21 @@
   tbody.non-playoff-teams > tr:first-child > td {
     border-top: 2px solid gray;
   }
+  
+  .playoffs-matchups {
+    margin-bottom: 2%;
+    clear: both;
+    overflow: hidden;
+  }
+  
+  .playoffs-conference {
+    width: 48%;
+    float: left;
+  }
+  
+  .playoffs-conference + .playoffs-conference {
+    margin-left: 2%;
+  }
 </style>
 </head>
 <body>
@@ -67,16 +82,21 @@
     <li><a href="#standings-panel">League</a></li>
     <li><a href="#standings-panel">Conference</a></li>
     <li><a href="#standings-panel">Division</a></li>
-    <li><a href="#playoffs-panel">Wild Card</a></li>
+    <li><a href="#wildcard-panel">Wild Card</a></li>
     <li><a href="#playoffs-panel">Playoffs</a></li>
   </ul>
   <div id="standings-panel">
     <table id="standings" class="tablesorter tablesorter-default"></table>
   </div>
+  <div id="wildcard-panel">
+    <p><small>Sorted by your custom points system.</small></p>
+    <table id="wildcard" class="tablesorter tablesorter-default"></table>
+  </div>
   <div id="playoffs-panel">
     <p><small>Sorted by your custom points system.</small></p>
-    <table id="playoffs" class="tablesorter tablesorter-default"></table>
+      <p><label>Generate By: <select id="playoffs-group" name="playoffs-group"><option value="conference">Top 8 per conference</option><option value="wildcard">Wild Card</option></select></label> <button id="update">Update</button></p>
     <div id="playoffs-bracket"></div>
+    <table id="playoffs" class="tablesorter tablesorter-default"></table>
   </div>
 </div> 
 </form>
@@ -119,7 +139,7 @@ $(document).ready( function() {
       playoffs();
     }
     if ( $('#tabs').tabs("option", "active") == 4 ) { 
-      playoffs( 'conference', 8);
+      playoffs( $('#playoffs-group').val());
     }
     else {
       calculate();
@@ -137,7 +157,7 @@ $(document).ready( function() {
       playoffs();
     }
     else if (activeTabName(ui.newTab) == 'playoffs' ) { 
-      playoffs( 'conference', 8);
+      playoffs( $('#playoffs-group').val());
     }
     else {
       calculate();
@@ -250,6 +270,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
       break;
     
       case 'conference': 
+        leaders = 8;
         $.each( teamsByConference, function( conference, teams) { 
           teams = teams.sort( sortByCustomPoints );
           playoffs[conference] = new Object();
@@ -283,26 +304,55 @@ function playoffs( type = "wildcard", leaders = 3 ) {
       output += "</tbody>";
     });
     
+    if ( activeTabName() == 'wildcard') { 
+      $('#wildcard').html(output); 
+      return;
+    }
+    
     $('#playoffs').html(output);
     
-    /*var output = "<h2>Playoff Matchups</h2>";
-    $.each( teamsByDivision, function( conference, divisions ) {
-      output += "<h3>" + conference + "</h3>";
-      var conferenceTeams = teamsByConference[conference];
-      conferenceTeams = conferenceTeams.sort( sortByCustomPoints );
-      var conferenceLeader = conferenceTeams[0];
-      $.each( divisions, function( division, teams ) { 
-        output += "<h4>" + division + "</h4>";
-        if ( division == conferenceLeader.division ) { 
-          output += "<p>" + playoffs[conference]['playoffs']['Wild Card'][1].name + ' (WC2) @ ' + conferenceLeader.name + "</p>";
-        }
-        else {
-          output += "<p>" + playoffs[conference]['playoffs']['Wild Card'][0].name + ' (WC1) @ ' + playoffs[conference]['playoffs'][division][0].name + "</p>";
-        }
-        output += "<p>" + playoffs[conference]['playoffs'][division][1].name + ' @ ' + playoffs[conference]['playoffs'][division][2].name + "</p>";
-      });
-    } );
-    $('#wildcard-bracket').html(output);*/
+    var output = "<h2>Playoff Matchups</h2>";
+    output += "<div class=\"playoffs-matchups\">"; 
+    switch ( type ) {
+      case 'wildcard': 
+        $.each( teamsByDivision, function( conference, divisions ) {
+          output += "<div class=\"playoffs-conference\">";
+          output += "<h3>" + conference + "</h3>";
+          var conferenceTeams = teamsByConference[conference];
+          conferenceTeams = conferenceTeams.sort( sortByCustomPoints );
+          var conferenceLeader = conferenceTeams[0];
+          $.each( divisions, function( division, teams ) { 
+            output += "<h4>" + division + "</h4>";
+            if ( division == conferenceLeader.division ) { 
+              output += "<p>" + playoffs[conference]['playoffs']['Wild Card'][1].name + ' (WC2) @ ' + conferenceLeader.name + "</p>";
+            }
+            else {
+              output += "<p>" + playoffs[conference]['playoffs']['Wild Card'][0].name + ' (WC1) @ ' + playoffs[conference]['playoffs'][division][0].name + "</p>";
+            }
+            output += "<p>" + playoffs[conference]['playoffs'][division][1].name + ' @ ' + playoffs[conference]['playoffs'][division][2].name + "</p>";
+          });
+          output += "</div>";
+        } );
+      break;
+      case 'conference': 
+        $.each( teamsByConference, function( conference, teams ) {
+          output += "<div class=\"playoffs-conference\">";
+          output += "<h3>" + conference + "</h3>";
+          teams = teams.sort( sortByCustomPoints );
+          var index = 0;
+          var lastIndex = leaders -1;
+          while ( index < lastIndex ) {
+            output += "<p>" + teams[lastIndex].name + ' @ ' + teams[index].name + "</p>";
+            index++;
+            lastIndex--;
+          }
+          output += "</div>";
+        });
+      break;
+    }
+    output += "</div>";
+
+    $('#playoffs-bracket').html(output);
     
   } } );  
   
