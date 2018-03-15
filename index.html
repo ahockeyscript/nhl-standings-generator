@@ -7,43 +7,43 @@
   <title>NHL Standings Generator</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/css/theme.default.min.css" />
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-<style id="css">
-  body {
-    font-family: sans-serif;
-  }
+  <style id="css">
+    body {
+      font-family: sans-serif;
+    }
 
-  table th {
-    text-align: left;
-  }
+    table th {
+      text-align: left;
+    }
 
-  label {
-  display: inline-block;
-  min-width: 10em;
-  }
-  .label-text {
-  display: inline-block;
-  min-width: 4.5em;
-  }
-  
-  tbody.non-playoff-teams > tr:first-child > td {
-    border-top: 2px solid gray;
-  }
-  
-  .playoffs-matchups {
-    margin-bottom: 2%;
-    clear: both;
-    overflow: hidden;
-  }
-  
-  .playoffs-conference {
-    width: 48%;
-    float: left;
-  }
-  
-  .playoffs-conference + .playoffs-conference {
-    margin-left: 2%;
-  }
-</style>
+    label {
+    display: inline-block;
+    min-width: 10em;
+    }
+    .label-text {
+    display: inline-block;
+    min-width: 4.5em;
+    }
+    
+    tbody.non-playoff-teams > tr:first-child > td {
+      border-top: 2px solid gray;
+    }
+    
+    .playoffs-matchups {
+      margin-bottom: 2%;
+      clear: both;
+      overflow: hidden;
+    }
+    
+    .playoffs-conference {
+      width: 48%;
+      float: left;
+    }
+    
+    .playoffs-conference + .playoffs-conference {
+      margin-left: 2%;
+    }
+  </style>
 </head>
 <body>
 <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
@@ -100,13 +100,15 @@
   </div>
 </div> 
 </form>
-  <p>With apologies to Montr&eacute;al fans - my JSON interpreter really hates Unicode for some reason.</p>
   <h2>How This Works</h2>
   <ol>
     <li>I download a JSON file of the NHL schedule, which includes data on goals scored, final period, etc</li>
     <li>I parse this data (using JQ) into a new JSON file, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
     <li>I upload (manually, for now) this data to GitHub, and it's used to populate this page</li>
   </ol>
+  
+  <h2>About the Author</h2>
+  <p>Australian and Canadian, back in Australia after a number of years in Vancouver BC. Listener of many hockey podcasts. Questions and comments to ahockeyscript@gmail.com. Twitter: <a href="http://twitter.com/ahockeyscript">@ahockeyscript</a>.</p>
   
 <script id="javascript">
 var dataSources = { "201718": "./data/results_2017-10-01_2018-07-01.json",
