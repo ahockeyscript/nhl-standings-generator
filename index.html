@@ -61,10 +61,12 @@
     .playoffs-conference {
       width: 48%;
       float: left;
+      min-width: 20em;
+      margin-right: 2%;
     }
     
     .playoffs-conference + .playoffs-conference {
-      margin-left: 2%;
+      margin-right: 0;
     }
   </style>
 </head>
@@ -397,7 +399,6 @@ function playoffs( type = "wildcard", leaders = 3 ) {
       break;
       case 'league': 
         teams = teamsAll.sort( sortByCustomPoints );
-        output += "<div class=\"playoffs-conference\">";
         var index = 0;
         var lastIndex = leaders -1;
         while ( index < lastIndex ) {
@@ -405,7 +406,6 @@ function playoffs( type = "wildcard", leaders = 3 ) {
           index++;
           lastIndex--;
         }
-        output += "</div>";
       break;
     }
     output += "</div>";
