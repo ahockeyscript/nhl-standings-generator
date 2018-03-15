@@ -163,6 +163,8 @@ $(document).ready( function() {
       calculate();
     }
   } );
+  
+  $('#dataSrc').change( function() { updateDataSource(); } );
 
 });
 
@@ -175,7 +177,18 @@ function activeTabName( tab ) {
 
 function updateDataSource( ) {
   dataSrc = dataSources[ $('#dataSrc').val() ];
-  $.get( { url: dataSrc, dataType: 'json', success: function(data) { $('#dataLastUpdated').html( data.lastModified) } } );
+  fetchData( function(data) { $('#dataLastUpdated').html( data.lastModified) } );
+}
+
+function fetchData( callback ) {
+  $.ajax({
+    url: dataSrc,
+    dataType: 'json',
+    headers: { 'Cache-Control': 'max-age=600, public' },
+    success: function (response) {
+        callback(response);
+    },
+  });
 }
 
 var displayFields = [ 'name', 'GP', 'wins', 'winsRG', 'winsOT', 'winsSO', 'losses', 'lossesRG', 'lossesOT', 'lossesSO', 'goalsRG', 'goalsOT', 'goalsNHL', /*'goalsAgainstRG', 'goalsAgainstOT', 'goalsAgainstNHL',*/ 'NHLPoints', 'CustomPoints'];
@@ -184,7 +197,7 @@ function calculate( ) {
   $('#standings').empty();
   var division = 'division';
   var conference = 'conference';
-  $.get( { url: dataSrc, dataType: 'json', success: function(data) { 
+  fetchData( function(data) { 
     var output = "";
     output += "<thead><tr><th>" + displayFields.join("</th><th>") + "</th></tr></thead>";
 
@@ -217,7 +230,7 @@ function calculate( ) {
             sortList: [[0,0]]
         });
     $("#standings").trigger("updateAll"); 
-  } } );
+  } );
 }
 
 function playoffs( type = "wildcard", leaders = 3 ) {
@@ -226,7 +239,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
   var teamsByConference = new Object();
   var wildcardSlots = 2;
   
-  $.get( { url: dataSrc, dataType: 'json', success: function(data) { 
+  fetchData( function(data) { 
     var output = "";
     
     //Reformatting by Conference and Division
@@ -354,7 +367,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
 
     $('#playoffs-bracket').html(output);
     
-  } } );  
+  } );  
   
 }
 
