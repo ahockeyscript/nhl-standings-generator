@@ -10,19 +10,43 @@
   <style id="css">
     body {
       font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    
+    #container {
+      background: #f0f0f0;
     }
 
-    table th {
+    #content {
+      border: 1px solid #c0c0c0;
+      background: #fff;
+      width: 80%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1em 2em;
+      -webkit-box-shadow: 0px 0px 20px -8px rgba(0,0,0,0.75);
+      -moz-box-shadow: 0px 0px 20px -8px rgba(0,0,0,0.75);
+      box-shadow: 0px 0px 20px -8px rgba(0,0,0,0.75);
+    }
+    
+    #tabs {
+      overflow-x: auto;
+    }
+
+    table.tablesorter th {
       text-align: left;
+      padding-right: 0.25em;
     }
 
     label {
-    display: inline-block;
-    min-width: 10em;
+      display: inline-block;
+      min-width: 10em;
     }
+    
     .label-text {
-    display: inline-block;
-    min-width: 4.5em;
+      display: inline-block;
+      min-width: 4.5em;
     }
     
     tbody.non-playoff-teams > tr:first-child > td {
@@ -54,6 +78,8 @@
 <script src="https://cdn.jsdelivr.net/npm/jquery-deserialize@2.0.0-rc1/src/jquery.deserialize.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/URI.js/1.19.0/URI.min.js"></script>
 
+<div id="container">
+<div id="content">
   <h1>NHL Standings Generator</h1>
   <p>So, you hate the way the NHL points system currently works and think you can do better. Now's your chance!</p>
   <form id="diy" method="get">
@@ -95,7 +121,7 @@
   </div>
   <div id="playoffs-panel">
     <p><small>Sorted by your custom points system.</small></p>
-      <p><label>Generate By: <select id="playoffs-group" name="playoffs-group"><option value="conference">Top 8 per conference</option><option value="wildcard">Wild Card</option></select></label> <button id="update">Update</button></p>
+      <p><label>Generate By: <select id="playoffs-group" name="playoffs-group"><option value="conference">Top 8 per conference</option><option value="league">Top 16 in League</option><option value="wildcard">Wild Card</option></select></label> <button id="update">Update</button></p>
     <div id="playoffs-bracket"></div>
     <table id="playoffs" class="tablesorter tablesorter-default"></table>
   </div>
@@ -110,7 +136,8 @@
   
   <h2>About the Author</h2>
   <p>Australian and Canadian, back in Australia after a number of years in Vancouver BC. Listener of many hockey podcasts. Questions and comments to ahockeyscript@gmail.com. Twitter: <a href="http://twitter.com/ahockeyscript">@ahockeyscript</a>.</p>
-  
+</div> <!-- #content -->
+</div> <!-- #container -->
 <script id="javascript">
 var dataSources = { "201718": "./data/results_2017-10-01_2018-07-01.json",
 "201617": "./data/results_2016-10-01_2017-07-01.json",
@@ -241,6 +268,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
   $('#playoffs').empty();
   var teamsByDivision = new Object();
   var teamsByConference = new Object();
+  var teamsAll = new Array();
   var wildcardSlots = 2;
   
   fetchData( function(data) { 
@@ -264,26 +292,27 @@ function playoffs( type = "wildcard", leaders = 3 ) {
       team['CustomPoints'] = calculateCustomPoints(team);
       teamsByDivision[team.conference][team.division].push( team );
       teamsByConference[team.conference].push( team );
+      teamsAll.push( team );
     });
     
     var playoffs = new Object();
     
     switch ( type ) { 
       case 'wildcard':
-      $.each( teamsByDivision, function( conference, divisions) { 
-        playoffs[conference] = new Object();
-        playoffs[conference]["playoffs"] = new Object();
-        playoffs[conference]["nonplayoffs"] = [];
-        var wildcard = [];
-        $.each( divisions, function( division, teams ) {
-          teams = teams.sort( sortByCustomPoints );
-          playoffs[conference]["playoffs"][division] = teams.slice(0, leaders); //Top 3 of each division
-          wildcard = wildcard.concat( teams.slice(leaders) ); //Store everyone else in here temporarily
+        $.each( teamsByDivision, function( conference, divisions) { 
+          playoffs[conference] = new Object();
+          playoffs[conference]["playoffs"] = new Object();
+          playoffs[conference]["nonplayoffs"] = [];
+          var wildcard = [];
+          $.each( divisions, function( division, teams ) {
+            teams = teams.sort( sortByCustomPoints );
+            playoffs[conference]["playoffs"][division] = teams.slice(0, leaders); //Top 3 of each division
+            wildcard = wildcard.concat( teams.slice(leaders) ); //Store everyone else in here temporarily
+          } );
+          wildcard = wildcard.sort( sortByCustomPoints );
+          playoffs[conference]["playoffs"]["Wild Card"] = wildcard.slice(0, wildcardSlots);
+          playoffs[conference]["nonplayoffs"] = wildcard.slice(wildcardSlots);
         } );
-        wildcard = wildcard.sort( sortByCustomPoints );
-        playoffs[conference]["playoffs"]["Wild Card"] = wildcard.slice(0, wildcardSlots);
-        playoffs[conference]["nonplayoffs"] = wildcard.slice(wildcardSlots);
-      } );
       break;
     
       case 'conference': 
@@ -296,6 +325,15 @@ function playoffs( type = "wildcard", leaders = 3 ) {
         } );     
       break;
       
+      case 'league':
+        leaders = 16;
+        teams = teamsAll.sort( sortByCustomPoints );
+        console.log(teams);
+        playoffs = new Object();
+        playoffs["playoffs"] = teams.slice(0, leaders);
+        playoffs["nonplayoffs"] = teams.slice(leaders);     
+      break;
+
       case 'division':
       
       break;
@@ -303,23 +341,15 @@ function playoffs( type = "wildcard", leaders = 3 ) {
 
     output = "<thead><tr><th>" + displayFields.join("</th><th>") + "</th></tr></thead>";
     
-    $.each( playoffs, function( conference, positions ) {
-      output += "<tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody>";
-      if ( Array.isArray( positions.playoffs ) ) { 
-        output += printTableRows( positions.playoffs );
-      }
-      else {
-        $.each( positions.playoffs, function( label, teams ) {
-            output += "<tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + label + "</th></tr></tbody>";
-            output += "<tbody>";
-            output += printTableRows( teams );
-            output += "</tbody>";
-        } );
-      }
-      output += "<tbody class=\"non-playoff-teams\">";
-      output += printTableRows( positions.nonplayoffs );
-      output += "</tbody>";
-    });
+    if ( 'league' === type ) {
+      output += printPlayoffsTable( playoffs );
+    }
+    else { 
+      $.each( playoffs, function( conference, positions ) {
+        output += "<tbody class=\"tablesorter-no-sort\"><tr class=\"conference\"><th colspan=17>" + conference + "</th></tr></tbody>";
+        output += printPlayoffsTable( positions );
+      });
+    }
     
     if ( activeTabName() == 'wildcard') { 
       $('#wildcard').html(output); 
@@ -366,6 +396,18 @@ function playoffs( type = "wildcard", leaders = 3 ) {
           output += "</div>";
         });
       break;
+      case 'league': 
+        teams = teamsAll.sort( sortByCustomPoints );
+        output += "<div class=\"playoffs-conference\">";
+        var index = 0;
+        var lastIndex = leaders -1;
+        while ( index < lastIndex ) {
+          output += "<p>" + teams[lastIndex].name + ' @ ' + teams[index].name + "</p>";
+          index++;
+          lastIndex--;
+        }
+        output += "</div>";
+      break;
     }
     output += "</div>";
 
@@ -373,6 +415,25 @@ function playoffs( type = "wildcard", leaders = 3 ) {
     
   } );  
   
+}
+
+function printPlayoffsTable( positions ) {
+  var output = '';
+  if ( Array.isArray( positions.playoffs ) ) { 
+    output += printTableRows( positions.playoffs );
+  }
+  else {
+    $.each( positions.playoffs, function( label, teams ) {
+        output += "<tbody class=\"tablesorter-no-sort\"><tr class=\"division\"><th colspan=17>" + label + "</th></tr></tbody>";
+        output += "<tbody>";
+        output += printTableRows( teams );
+        output += "</tbody>";
+    } );
+  }
+  output += "<tbody class=\"non-playoff-teams\">";
+  output += printTableRows( positions.nonplayoffs );
+  output += "</tbody>";
+  return output;
 }
 
 function printTableRows( teams ) {
@@ -433,5 +494,16 @@ function calculateCustomPoints( teamRecord ) {
   return customPoints;
 }      
 </script>
+
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-115774306-1"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-115774306-1');
+</script>
+
 </body>
 </html>
