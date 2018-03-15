@@ -398,7 +398,7 @@ function sortByNHLPoints( a, b ) {
 
 function sortByPoints( a, b, tieBreakers ) {
   for ( var i = 0; i < tieBreakers.length; i++ ) {
-    var compare = b[tieBreakers[i]] - a[tieBreakers[i]];
+    var compare = ( tieBreakers[i] === 'GP' ) ? a[tieBreakers[i]] - b[tieBreakers[i]] : b[tieBreakers[i]] - a[tieBreakers[i]];
     if ( ( compare ) != 0 ) {
       return compare;
     }
