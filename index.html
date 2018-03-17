@@ -14,6 +14,10 @@
       padding: 0;
     }
     
+    hr {
+      margin: 2em 0;
+    }
+    
     #container {
       background: #f0f0f0;
     }
@@ -113,6 +117,7 @@
     <li><a href="#wildcard-panel">Wild Card</a></li>
     <li><a href="#playoffs-panel">Playoffs</a></li>
   </ul>
+  
   <div id="standings-panel">
     <table id="standings" class="tablesorter tablesorter-default"></table>
   </div>
@@ -128,15 +133,29 @@
   </div>
 </div> 
 </form>
+  <hr />
   <h2>How This Works</h2>
   <ol>
     <li>I download a JSON file of the NHL schedule, which includes data on goals scored, final period, etc</li>
-    <li>I parse this data (using JQ) into a new JSON file, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
-    <li>I upload (manually, for now) this data to GitHub, and it's used to populate this page</li>
+    <li>I parse this data (using <a href="https://stedolan.github.io/jq/">JQ</a>) into a new JSON file, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
+    <li>The results for the current season are automatically pushed to GitHub at 10:00 AM UTC every day.</li>
   </ol>
+  <hr />
+  <h2>Frequently Asked Questions</h2>
   
+  <h3>Why did you make this?</h3>
+  <p>I was hearing a lot of talk about the "loser point" and proposed three point systems, but couldn't find any up to date representations of what the current standings would look like under those systems. Being currently unemployed and wanting to get my hands dirty with some Javascript, I made this page.</p>
+  
+  <h3>What about ties?</h3>
+  <p>The current NHL doesn't have ties, so I didn't feel it made sense to explicitly support them here. Try giving shootouts the same number of points for the winner and loser.</p>
+  
+  <h3>But teams would play differently if a regulation win were worth more points!</h3>
+  <p>Of course! But I wouldn't have a clue how to represent that in this table.</p>
+  <hr />
   <h2>About the Author</h2>
   <p>Australian and Canadian, back in Australia after a number of years in Vancouver BC. Listener of many hockey podcasts. Questions and comments to ahockeyscript@gmail.com. Twitter: <a href="http://twitter.com/ahockeyscript">@ahockeyscript</a>.</p>
+  
+  <p>See also: <a href="https://ahockeyscript.github.io/hockey-browser-tools/">Hockey Browser Tools</a>, where you can find various scripts that can be used to tweak your browser into providing a different NHL.com experience.</p>
 </div> <!-- #content -->
 </div> <!-- #container -->
 <script id="javascript">
