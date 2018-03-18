@@ -55,22 +55,42 @@
     tbody.non-playoff-teams > tr:first-child > td {
       border-top: 2px solid gray;
     }
-    
-    .playoffs-matchups {
-      margin-bottom: 2%;
-      clear: both;
-      overflow: hidden;
-    }
-    
-    .playoffs-conference {
-      width: 48%;
-      float: left;
-      min-width: 20em;
-      margin-right: 2%;
-    }
-    
-    .playoffs-conference + .playoffs-conference {
-      margin-right: 0;
+
+    @media screen and (min-width: 1080px) {
+      #playoffs-bracket .playoffs-matchups {
+        margin-bottom: 2%;
+        clear: both;
+        overflow: hidden;
+      }
+      
+      #playoffs-bracket .playoffs-conference {
+        width: 48%;
+        float: left;
+        min-width: 20em;
+        margin-right: 2%;
+      }
+      
+      .playoffs-conference + .playoffs-conference {
+        margin-right: 0;
+      }
+      
+      #playoffs-bracket h3, #playoffs-bracket p {
+        text-align: center;
+      }
+          
+      #playoffs-bracket .team-name {
+        min-width: 12em;
+        display: inline-block;
+        margin-left: 1em;
+        margin-right: 1em;
+        text-align: left;
+      }
+      
+      #playoffs-bracket .team-name:first-child {
+        margin-left: 0;
+        text-align: right;
+      }
+
     }
   </style>
 </head>
@@ -393,12 +413,12 @@ function playoffs( type = "wildcard", leaders = 3 ) {
           $.each( divisions, function( division, teams ) { 
             output += "<h4>" + division + "</h4>";
             if ( division == conferenceLeader.division ) { 
-              output += "<p>" + playoffs[conference]['playoffs']['Wild Card'][1].name + ' (WC2) @ ' + conferenceLeader.name + "</p>";
+              output += "<p><span class=\"team-name\">" + conferenceLeader.name + '</span> vs <span class=\"team-name\">' + playoffs[conference]['playoffs']['Wild Card'][1].name + " (WC2)</span></p>";
             }
             else {
-              output += "<p>" + playoffs[conference]['playoffs']['Wild Card'][0].name + ' (WC1) @ ' + playoffs[conference]['playoffs'][division][0].name + "</p>";
+              output += "<p><span class=\"team-name\">" + playoffs[conference]['playoffs'][division][0].name + '</span> vs <span class=\"team-name\">' + playoffs[conference]['playoffs']['Wild Card'][0].name + " (WC1)</span></p>";
             }
-            output += "<p>" + playoffs[conference]['playoffs'][division][2].name + ' @ ' + playoffs[conference]['playoffs'][division][1].name + "</p>";
+            output += "<p><span class=\"team-name\">" + playoffs[conference]['playoffs'][division][1].name + '</span> vs <span class=\"team-name\">' + playoffs[conference]['playoffs'][division][2].name + "</span></p>";
           });
           output += "</div>";
         } );
@@ -411,7 +431,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
           var index = 0;
           var lastIndex = leaders -1;
           while ( index < lastIndex ) {
-            output += "<p>" + teams[index].name + ' vs ' + teams[lastIndex].name + "</p>";
+            output += "<p><span class=\"team-name\">" + teams[index].name + '</span> vs <span class=\"team-name\">' + teams[lastIndex].name + "</span></p>";
             index++;
             lastIndex--;
           }
@@ -423,7 +443,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
         var index = 0;
         var lastIndex = leaders -1;
         while ( index < lastIndex ) {
-          output += "<p>" + teams[index].name + ' vs ' + teams[lastIndex].name + "</p>";
+          output += "<p><span class=\"team-name\">" + teams[index].name + '</span> vs <span class=\"team-name\">' + teams[lastIndex].name + "</span></p>";
           index++;
           lastIndex--;
         }
