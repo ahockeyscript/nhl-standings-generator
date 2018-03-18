@@ -137,13 +137,16 @@
   <ol>
     <li>I download a JSON file of the NHL schedule, which includes data on goals scored, final period, etc</li>
     <li>I parse this data (using <a href="https://stedolan.github.io/jq/">JQ</a>) into a new JSON file, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
-    <li>The results for the current season are automatically pushed to GitHub at 10:00 AM UTC every day.</li>
+    <li>The results for the current season are automatically updated at 10:00 AM UTC every day.</li>
   </ol>
   <hr />
   <h2>Frequently Asked Questions</h2>
   
+  <h3>How do I use this?</h3>
+  <p>Enter your preferred points weightings for each type of game final result, then click "Generate Standings". Each tab presents a different type of standings, with the final tab presenting the playoff matchups. You can choose alternative playoff formats on that tab.</p>
+  
   <h3>Why did you make this?</h3>
-  <p>I was hearing a lot of talk about the "loser point" and proposed three point systems, but couldn't find any up to date representations of what the current standings would look like under those systems. Being currently unemployed and wanting to get my hands dirty with some Javascript, I made this page.</p>
+  <p>I was hearing a lot of talk about the "loser point", proposed three point systems and alternative playoff formats, but couldn't find any up to date representations of what the current standings would look like under those systems. Being currently unemployed and wanting to get my hands dirty with some Javascript, I made this page.</p>
   
   <h3>What about ties?</h3>
   <p>The current NHL doesn't have ties, so I didn't feel it made sense to explicitly support them here. Try giving shootouts the same number of points for the winner and loser.</p>
@@ -408,7 +411,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
           var index = 0;
           var lastIndex = leaders -1;
           while ( index < lastIndex ) {
-            output += "<p>" + teams[lastIndex].name + ' @ ' + teams[index].name + "</p>";
+            output += "<p>" + teams[index].name + ' vs ' + teams[lastIndex].name + "</p>";
             index++;
             lastIndex--;
           }
@@ -420,7 +423,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
         var index = 0;
         var lastIndex = leaders -1;
         while ( index < lastIndex ) {
-          output += "<p>" + teams[lastIndex].name + ' @ ' + teams[index].name + "</p>";
+          output += "<p>" + teams[index].name + ' vs ' + teams[lastIndex].name + "</p>";
           index++;
           lastIndex--;
         }
