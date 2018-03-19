@@ -159,6 +159,7 @@
     <li>I parse this data (using <a href="https://stedolan.github.io/jq/">JQ</a>) into a new JSON file, determining what kind of win each game had and calculating the actual goals scored (no shootout wins), then adding up all this data</li>
     <li>The results for the current season are automatically updated at 10:00 AM UTC every day.</li>
   </ol>
+  <p>Tie-breakers are points, games played, wins (regulation + overtime), then goal differential. The NHL also takes into account the team vs team record, but that was too complicated to implement.</p>
   <hr />
   <h2>Frequently Asked Questions</h2>
   
@@ -173,6 +174,7 @@
   
   <h3>But teams would play differently if a regulation win were worth more points!</h3>
   <p>Of course! But I wouldn't have a clue how to represent that in this table.</p>
+  
   <hr />
   <h2>About the Author</h2>
   <p>Australian and Canadian, back in Australia after a number of years in Vancouver BC. Listener of many hockey podcasts. Questions and comments to ahockeyscript@gmail.com. Twitter: <a href="http://twitter.com/ahockeyscript">@ahockeyscript</a>.</p>
