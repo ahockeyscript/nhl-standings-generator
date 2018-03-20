@@ -1,0 +1,127 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+hr {
+  margin: 2em 0;
+}
+
+#container {
+  background: #f0f0f0;
+}
+
+#content {
+  border: 1px solid #c0c0c0;
+  background: #fff;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1em 2em;
+  -webkit-box-shadow: 0px 0px 20px -8px rgba(0,0,0,0.75);
+  -moz-box-shadow: 0px 0px 20px -8px rgba(0,0,0,0.75);
+  box-shadow: 0px 0px 20px -8px rgba(0,0,0,0.75);
+}
+
+#tabs {
+  overflow-x: auto;
+}
+
+table.tablesorter th {
+  text-align: left;
+  padding-right: 0.25em;
+}
+
+label {
+  display: inline-block;
+  min-width: 10em;
+}
+
+.label-text {
+  display: inline-block;
+  min-width: 4.5em;
+}
+
+tbody.non-playoff-teams > tr:first-child > td {
+  border-top: 2px solid gray;
+}
+
+@media screen and (min-width: 1080px) {
+  #playoffs-bracket .playoffs-matchups {
+    margin-bottom: 2%;
+    clear: both;
+    overflow: hidden;
+  }
+  
+  #playoffs-bracket .playoffs-conference {
+    width: 48%;
+    float: left;
+    min-width: 20em;
+    margin-right: 2%;
+  }
+  
+  .playoffs-conference + .playoffs-conference {
+    margin-right: 0;
+  }
+  
+  #playoffs-bracket h3, #playoffs-bracket p {
+    text-align: center;
+  }
+  
+  #playoffs-bracket ul {
+    list-style-type: none;
+    margin-left: 0;
+    padding: 0;
+  }
+      
+  #playoffs-bracket .team-name {
+    min-width: 12em;
+    display: inline-block;
+    margin-left: 1em;
+    text-align: left;
+  }
+  
+  #playoffs-bracket .team-name:first-child {
+    margin-right: 1em;
+    margin-left: 0;
+    text-align: right;
+  }
+}
+
+.fiegi-playoffs {
+  text-align: center;
+}
+
+.fiegi-playoffs li {
+  margin-bottom: 0.25em;
+}
+
+.fiegi-playoffs ul li > span {
+  margin-left: 1em;
+  text-align: left;
+  display: inline-block;
+  width: 14em;
+}
+
+.fiegi-playoffs li .fiegi-team-name {
+  display: inline-block;
+  padding: 0.5em;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.fiegi-playoffs li .fiegi-team-name.selected {
+  opacity: 1;
+  border-radius: 5px;
+  color: #fff;
+}
+
+.fiegi-playoffs li .fiegi-team-name:not(.selected) {
+  background: none;
+}
+  
+.fiegi-playoffs ul li > span:first-child {
+  margin-right: 1em;
+  margin-left: 0;
+  text-align: right;
+}
