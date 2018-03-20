@@ -413,28 +413,39 @@ function playoffs_fiegi( ) {
       var $fiegi = $(response);
       var i = 0;
       for (i; i < teams.length; i++ ) {
-        $('.fiegi-seed-' + (i+1), $fiegi).find('.fiegi-team-name').empty().data('seed', i).append(teams[i].name + ' (' + (i+1) + ')' );
+        $('li .fiegi-seed-' + (i+1), $fiegi).find('.fiegi-team-name').empty().data('seed', i).append(teams[i].name + ' (' + (i+1) + ')' ).addClass('primary-bg--team-' + teams[i].id);
       }
+      $('p .fiegi-seed-17', $fiegi).text(teams[16].name + ' (' + 17 + ')' );
       
       $('.fiegi-qualifying-round li .fiegi-team-name', $fiegi).click( function() { 
-          fiegi_complete_round(this, 7, '.fiegi-qualifying-seed-', teams);         
+        fiegi_team_select( this, teams );
+        fiegi_complete_round(this, 7, '.fiegi-qualifying-seed-', teams);         
       });
       
-      $('.fiegi-wild-card-round li .fiegi-team-name', $fiegi).click( function() { 
-          fiegi_complete_round(this, 8, '.fiegi-wild-card-seed-', teams);
+      $('.fiegi-wild-card-round li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
+        fiegi_team_select( this, teams );
+        fiegi_complete_round(this, 8, '.fiegi-wild-card-seed-', teams);
       });
       
-      $('.fiegi-round-1 li .fiegi-team-name', $fiegi).click( function() { 
-          fiegi_complete_round(this, 8, '.fiegi-round1-seed-', teams);
+      $('.fiegi-round-1 li > span', $fiegi).on('click', '.fiegi-team-name',function() { 
+        fiegi_team_select( this, teams );
+        fiegi_complete_round(this, 8, '.fiegi-round1-seed-', teams);
       });
       
-      $('.fiegi-round-2 li .fiegi-team-name', $fiegi).click( function() { 
-          fiegi_complete_round(this, 4, '.fiegi-round2-seed-', teams);
+      $('.fiegi-round-2 li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
+        fiegi_team_select( this, teams );
+        fiegi_complete_round(this, 4, '.fiegi-round2-seed-', teams);
       });
 
-      $('.fiegi-round-3 li .fiegi-team-name', $fiegi).click( function() { 
-          fiegi_complete_round(this, 2, '.fiegi-round3-seed-', teams);
+      $('.fiegi-round-3 li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
+        fiegi_team_select( this, teams );
+        fiegi_complete_round(this, 2, '.fiegi-round3-seed-', teams);
       });
+
+      $('.fiegi-round-4 li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
+        fiegi_team_select( this, teams );
+      });
+      
       $('#playoffs-bracket').append($fiegi);
     },
   });
@@ -442,25 +453,24 @@ function playoffs_fiegi( ) {
   });
 }
 
-function fiegi_complete_round( el, seriesNum, targetClass, teams ) {
+function fiegi_team_select( el, teams ) {
   $(el).parents('li').find('.fiegi-team-name').removeClass('selected');
-  $(el).attr('class', 'fiegi-team-name selected primary-bg--team-' + teams[ $(el).data('seed') ].id);
+  $(el).addClass('selected');
+}
+
+function fiegi_complete_round( el, seriesNum, targetClass, teams ) {
   var $parentRound = $(el).parents('.fiegi-round');
   var $selectedTeams = $( '.fiegi-team-name.selected', $parentRound );
   if ( $selectedTeams.length == seriesNum ) {
-    //Reducing this to just their seed indexes
-    var indexes = $selectedTeams.map(function() {
-      return $(this).data('seed');
-    })
-    .get();
-    
-    indexes = indexes.sort(function(a, b){return a - b}); //Sorting as numbers
-    
-    var i = 0;
-    for (i; i < indexes.length; i++ ) {
-      $( targetClass + (i+1), $parentRound.parents('.fiegi-playoffs')).find('.fiegi-team-name').empty().data('seed', indexes[i]).append(teams[indexes[i]].name + ' (' + (indexes[i]+1) + ')' );
-    };
-    
+    $selectedTeams.sort( function( a, b ) {
+      a = parseInt( $(a).data('seed') );
+      b = parseInt( $(b).data('seed') );
+      return a - b;
+    });
+        
+    $selectedTeams.each( function( i, el) { 
+       $( targetClass + (i+1), $parentRound.parents('.fiegi-playoffs')).empty().append( $(this).clone(true).off().removeClass('selected') );
+    });
   }
 }
 

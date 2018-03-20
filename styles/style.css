@@ -116,14 +116,23 @@ tbody.non-playoff-teams > tr:first-child > td {
   cursor: pointer;
 }
 
+.fiegi-playoffs li .fiegi-team-name:empty {
+  cursor: default;
+}
+
+.fiegi-playoffs li .fiegi-team-name:empty:after {
+  content: 'TBD';
+  color: #c0c0c0;
+}
+
 .fiegi-playoffs li .fiegi-team-name.selected {
   opacity: 1;
   border-radius: 5px;
-  color: #fff;
 }
 
 .fiegi-playoffs li .fiegi-team-name:not(.selected) {
   background: none;
+  color: inherit;
 }
 
 @media screen and (min-width: 1080px) {
