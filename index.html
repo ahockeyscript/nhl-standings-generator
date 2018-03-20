@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width">
   <title>NHL Standings Generator</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.tablesorter/2.29.3/css/theme.default.min.css" />
+  <link rel="stylesheet" href="styles/nhl_teams.css" />
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <style id="css">
     body {
@@ -77,6 +78,12 @@
       #playoffs-bracket h3, #playoffs-bracket p {
         text-align: center;
       }
+      
+      #playoffs-bracket ul {
+        list-style-type: none;
+        margin-left: 0;
+        padding: 0;
+      }
           
       #playoffs-bracket .team-name {
         min-width: 12em;
@@ -90,7 +97,44 @@
         margin-left: 0;
         text-align: right;
       }
-
+    }
+    
+    .fiegi-playoffs {
+      text-align: center;
+    }
+    
+    .fiegi-playoffs li {
+      margin-bottom: 0.25em;
+    }
+    
+    .fiegi-playoffs ul li > span {
+      margin-left: 1em;
+      text-align: left;
+      display: inline-block;
+      width: 14em;
+    }
+    
+    .fiegi-playoffs li .fiegi-team-name {
+      display: inline-block;
+      padding: 0.5em;
+      opacity: 0.8;
+      cursor: pointer;
+    }
+    
+    .fiegi-playoffs li .fiegi-team-name.selected {
+      opacity: 1;
+      border-radius: 5px;
+      color: #fff;
+    }
+    
+    .fiegi-playoffs li .fiegi-team-name:not(.selected) {
+      background: none;
+    }
+      
+    .fiegi-playoffs ul li > span:first-child {
+      margin-right: 1em;
+      margin-left: 0;
+      text-align: right;
     }
   </style>
 </head>
@@ -146,7 +190,13 @@
   </div>
   <div id="playoffs-panel">
     <p><small>Sorted by your custom points system.</small></p>
-      <p><label>Generate By: <select id="playoffs-group" name="playoffs-group"><option value="conference">Top 8 per conference</option><option value="league">Top 16 in League</option><option value="wildcard">Wild Card</option></select></label> <button id="update">Update</button></p>
+      <p><label>Generate By: 
+        <select id="playoffs-group" name="playoffs-group">
+          <option value="conference">Top 8 per conference</option>
+          <option value="league">Top 16 in League</option>
+          <option value="wildcard">Wild Card</option>
+          <option value="fiegi">FIEGI (per Dave Lozo)</option>
+        </select></label> <button id="update">Update</button></p>
     <div id="playoffs-bracket"></div>
     <table id="playoffs" class="tablesorter tablesorter-default"></table>
   </div>
@@ -309,6 +359,9 @@ function calculate( ) {
 }
 
 function playoffs( type = "wildcard", leaders = 3 ) {
+
+  if ( 'fiegi' == type) { playoffs_fiegi(); return; }
+  
   $('#playoffs').empty();
   var teamsByDivision = new Object();
   var teamsByConference = new Object();
@@ -372,7 +425,6 @@ function playoffs( type = "wildcard", leaders = 3 ) {
       case 'league':
         leaders = 16;
         teams = teamsAll.sort( sortByCustomPoints );
-        console.log(teams);
         playoffs = new Object();
         playoffs["playoffs"] = teams.slice(0, leaders);
         playoffs["nonplayoffs"] = teams.slice(leaders);     
@@ -457,6 +509,88 @@ function playoffs( type = "wildcard", leaders = 3 ) {
     
   } );  
   
+}
+
+function playoffs_fiegi( ) {
+  var playoffs, teams;
+  $('#playoffs-bracket').empty();
+  teams = new Array();
+  
+  fetchData( function(data) { 
+    var output = "";
+    
+    $.each( data.results, function( index, team) {       
+      team['winsROW'] = team['winsRG'] + team['winsOT'];
+      team['goalDiff'] = team['goals'] - team['goalsAgainst'];
+      team['NHLPoints'] = calculateNHLPoints(team);
+      team['CustomPoints'] = calculateCustomPoints(team);
+      teams.push( team );
+    });
+    
+    teams = teams.sort( sortByCustomPoints );
+    
+    playoffs = new Object();
+    playoffs["qualifying"] = teams.slice(-16);
+    playoffs["round0"] = teams.slice(8, 16);    
+    
+    $.get( {
+    url: './fiegi_template.html',
+    dataType: 'text',
+    success: function(response) {
+      var $fiegi = $(response);
+      var i = 0;
+      for (i; i < teams.length; i++ ) {
+        $('.fiegi-seed-' + (i+1), $fiegi).find('.fiegi-team-name').empty().data('seed', i).append(teams[i].name + ' (' + (i+1) + ')' );
+      }
+      
+      $('.fiegi-qualifying-round li .fiegi-team-name', $fiegi).click( function() { 
+          fiegi_complete_round(this, 7, '.fiegi-qualifying-seed-', teams);         
+      });
+      
+      $('.fiegi-wild-card-round li .fiegi-team-name', $fiegi).click( function() { 
+          fiegi_complete_round(this, 8, '.fiegi-wild-card-seed-', teams);
+      });
+      
+      $('.fiegi-round-1 li .fiegi-team-name', $fiegi).click( function() { 
+          fiegi_complete_round(this, 8, '.fiegi-round1-seed-', teams);
+      });
+      
+      $('.fiegi-round-2 li .fiegi-team-name', $fiegi).click( function() { 
+          fiegi_complete_round(this, 4, '.fiegi-round2-seed-', teams);
+      });
+
+      $('.fiegi-round-3 li .fiegi-team-name', $fiegi).click( function() { 
+          fiegi_complete_round(this, 2, '.fiegi-round3-seed-', teams);
+      });
+      $('#playoffs-bracket').append($fiegi);
+    },
+  });
+    
+  });
+}
+
+function fiegi_complete_round( el, seriesNum, targetClass, teams ) {
+  $(el).parents('li').find('.fiegi-team-name').removeClass('selected');
+  $(el).attr('class', 'fiegi-team-name selected primary-bg--team-' + teams[ $(el).data('seed') ].id);
+  var $parentRound = $(el).parents('.fiegi-round');
+  var $selectedTeams = $( '.fiegi-team-name.selected', $parentRound );
+  console.log($selectedTeams);
+  if ( $selectedTeams.length == seriesNum ) {
+    //Reducing this to just their seed indexes
+    var indexes = $selectedTeams.map(function() {
+      return $(this).data('seed');
+    })
+    .get();
+    console.log(indexes);
+    
+    indexes = indexes.sort(function(a, b){return a - b}); //Sorting as numbers
+    
+    var i = 0;
+    for (i; i < indexes.length; i++ ) {
+      $( targetClass + (i+1), $parentRound.parents('.fiegi-playoffs')).find('.fiegi-team-name').empty().data('seed', indexes[i]).append(teams[indexes[i]].name + ' (' + (indexes[i]+1) + ')' );
+    };
+    
+  }
 }
 
 function printPlayoffsTable( positions ) {
