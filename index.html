@@ -417,32 +417,27 @@ function playoffs_fiegi( ) {
       }
       $('p .fiegi-seed-17', $fiegi).text(teams[16].name + ' (' + 17 + ')' );
       
-      $('.fiegi-qualifying-round li .fiegi-team-name', $fiegi).click( function() { 
-        fiegi_team_select( this, teams );
-        fiegi_complete_round(this, 7, '.fiegi-qualifying-seed-', teams);         
-      });
-      
-      $('.fiegi-wild-card-round li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
-        fiegi_team_select( this, teams );
-        fiegi_complete_round(this, 8, '.fiegi-wild-card-seed-', teams);
-      });
-      
-      $('.fiegi-round-1 li > span', $fiegi).on('click', '.fiegi-team-name',function() { 
-        fiegi_team_select( this, teams );
-        fiegi_complete_round(this, 8, '.fiegi-round1-seed-', teams);
-      });
-      
-      $('.fiegi-round-2 li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
-        fiegi_team_select( this, teams );
-        fiegi_complete_round(this, 4, '.fiegi-round2-seed-', teams);
+      $('.fiegi-qualifying-round', $fiegi).on( 'fiegi:refresh', function() { 
+        fiegi_complete_round( this, 7, '.fiegi-qualifying-seed-', teams) 
       });
 
-      $('.fiegi-round-3 li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
-        fiegi_team_select( this, teams );
-        fiegi_complete_round(this, 2, '.fiegi-round3-seed-', teams);
+      $('.fiegi-wild-card-round', $fiegi).on( 'fiegi:refresh', function() { 
+        fiegi_complete_round( this, 8, '.fiegi-wild-card-seed-', teams);
       });
 
-      $('.fiegi-round-4 li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
+      $('.fiegi-round-1', $fiegi).on( 'fiegi:refresh', function() { 
+        fiegi_complete_round( this, 8, '.fiegi-round1-seed-', teams); 
+      });
+
+      $('.fiegi-round-2', $fiegi).on( 'fiegi:refresh', function() { 
+        fiegi_complete_round( this, 4, '.fiegi-round2-seed-', teams); 
+      }); 
+
+      $('.fiegi-round-3', $fiegi).on( 'fiegi:refresh', function() { 
+        fiegi_complete_round( this, 2, '.fiegi-round3-seed-', teams);
+      });
+
+      $('.fiegi-round li > span', $fiegi).on('click', '.fiegi-team-name', function() { 
         fiegi_team_select( this, teams );
       });
       
@@ -456,22 +451,31 @@ function playoffs_fiegi( ) {
 function fiegi_team_select( el, teams ) {
   $(el).parents('li').find('.fiegi-team-name').removeClass('selected');
   $(el).addClass('selected');
+  $(el).parents('.fiegi-round').trigger('fiegi:refresh');
 }
 
-function fiegi_complete_round( el, seriesNum, targetClass, teams ) {
-  var $parentRound = $(el).parents('.fiegi-round');
-  var $selectedTeams = $( '.fiegi-team-name.selected', $parentRound );
+function fiegi_complete_round( parentRound, seriesNum, targetClass, teams ) {
+  var $selectedTeams = $( '.fiegi-team-name.selected', $(parentRound) );
+  $selectedTeams.sort( function( a, b ) {
+    a = parseInt( $(a).data('seed') );
+    b = parseInt( $(b).data('seed') );
+    return a - b;
+  });
   if ( $selectedTeams.length == seriesNum ) {
-    $selectedTeams.sort( function( a, b ) {
-      a = parseInt( $(a).data('seed') );
-      b = parseInt( $(b).data('seed') );
-      return a - b;
-    });
-        
     $selectedTeams.each( function( i, el) { 
-       $( targetClass + (i+1), $parentRound.parents('.fiegi-playoffs')).empty().append( $(this).clone(true).off().removeClass('selected') );
+      var $target = $( targetClass + (i+1), $(parentRound).parents('.fiegi-playoffs')).find('.fiegi-team-name');
+      if ( $selectedTeams.eq(i).data('seed') != $target.data('seed') ) {
+        $target.replaceWith( $(this).clone(true).off().removeClass('selected') );        
+      }
     });
   }
+  else {
+    for ( var i = 0; i < seriesNum; i++ ) { 
+      var $target = $( targetClass + (i+1), $(parentRound).parents('.fiegi-playoffs')).find('.fiegi-team-name:not(:empty)');
+      $target.empty().removeData().attr('class', 'fiegi-team-name');        
+    }
+  }
+  $(parentRound).next('.fiegi-round').trigger('fiegi:refresh');
 }
 
 function printPlayoffsTable( positions ) {
