@@ -447,14 +447,12 @@ function fiegi_complete_round( el, seriesNum, targetClass, teams ) {
   $(el).attr('class', 'fiegi-team-name selected primary-bg--team-' + teams[ $(el).data('seed') ].id);
   var $parentRound = $(el).parents('.fiegi-round');
   var $selectedTeams = $( '.fiegi-team-name.selected', $parentRound );
-  console.log($selectedTeams);
   if ( $selectedTeams.length == seriesNum ) {
     //Reducing this to just their seed indexes
     var indexes = $selectedTeams.map(function() {
       return $(this).data('seed');
     })
     .get();
-    console.log(indexes);
     
     indexes = indexes.sort(function(a, b){return a - b}); //Sorting as numbers
     
