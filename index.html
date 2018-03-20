@@ -386,6 +386,7 @@ function playoffs( type = "wildcard", leaders = 3 ) {
 function playoffs_fiegi( ) {
   var playoffs, teams;
   $('#playoffs-bracket').empty();
+  $('#playoffs').empty();
   teams = new Array();
   
   fetchData( function(data) { 
