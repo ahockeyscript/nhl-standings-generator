@@ -1,5 +1,5 @@
 {
-  "lastModified": "2018-04-29 10:00:04",
+  "lastModified": "2018-04-30 10:00:03",
   "results": [
     {
       "name": "Boston Bruins",
@@ -92,6 +92,29 @@
       "goalsAgainstRG": 238,
       "goalsAgainstOT": 5,
       "goalsAgainstNHL": 246
+    },
+    {
+      "name": "Montréal Canadiens",
+      "id": 8,
+      "conference": "Eastern",
+      "division": "Atlantic",
+      "GP": 82,
+      "wins": 29,
+      "winsRG": 24,
+      "winsOT": 3,
+      "winsSO": 2,
+      "winsERR": 0,
+      "losses": 53,
+      "lossesRG": 40,
+      "lossesOT": 7,
+      "lossesSO": 6,
+      "lossesERR": 0,
+      "goalsRG": 204,
+      "goalsOT": 3,
+      "goalsNHL": 209,
+      "goalsAgainstRG": 251,
+      "goalsAgainstOT": 7,
+      "goalsAgainstNHL": 264
     },
     {
       "name": "Ottawa Senators",
