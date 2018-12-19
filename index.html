@@ -144,7 +144,8 @@ $(document).ready( function() {
     else {
       calculate();
     }
-    history.pushState( '', '', '?' + $( this ).serialize() + '&tab=' + activeTabName() );
+    uri.query( $( this ).serialize() + '&tab=' + activeTabName() );
+    history.pushState('', '', '?' + url.query());
   }).submit();
   $('form#diy').on('reset', function(e){
       history.pushState('', '', '?');
