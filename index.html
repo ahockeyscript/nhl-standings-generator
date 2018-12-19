@@ -26,6 +26,7 @@
   <form id="diy" method="get">
   <p><label>Data Source: 
     <select id="dataSrc" name="dataSrc">
+      <option value="201819">2018-19</option>
       <option value="201718">2017-18</option>
       <option value="201617">2016-17</option>
       <option value="201516">2015-16</option>
@@ -105,7 +106,9 @@
 </div> <!-- #content -->
 </div> <!-- #container -->
 <script id="javascript">
-var dataSources = { "201718": "./data/results_2017-10-01_2018-07-01.json",
+var dataSources = { 
+"201819": "./data/results_2018-10-01_2019-07-01.json",
+"201718": "./data/results_2017-10-01_2018-07-01.json",
 "201617": "./data/results_2016-10-01_2017-07-01.json",
 "201516": "./data/results_2015-10-01_2016-07-01.json"
 };
