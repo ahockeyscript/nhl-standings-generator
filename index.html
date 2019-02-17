@@ -34,7 +34,7 @@
   
   <h3>DIY Points</h3>
   <p>
-    <label><span class="label-text">Reg win:</span> <input id="winRG" name="winRG" size="2" value="3" /></label> 
+    <label><span class="label-text">Reg win:</span> <input id="winRG" name="winRG" size="2" value="2" /></label> 
     <label><span class="label-text">OT win:</span> <input id="winOT" name="winOT" size="2" value="2" /></label>
     <label><span class="label-text">SO win:</span> <input id="winSO" name="winSO" size="2" value="2" /></label>
   </p>
@@ -228,9 +228,10 @@ function calculate( ) {
     $('#standings').tablesorter({ 
             sortInitialOrder: 'desc',
             widgets : ['zebra','columns'],
-            sortList: [[0,0]]
+            sortList: [[displayFields.length - 1,1]]
         });
     $("#standings").trigger("updateAll"); 
+    $('#standings').trigger('applyWidgets');
   } );
 }
 
